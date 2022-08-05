@@ -64,6 +64,7 @@ class AstroDog:
     self.cached_dcb: DefaultDict[str, Optional[DCB]] = defaultdict(lambda: None)
 
   def get_ionex(self, time) -> Optional[IonexMap]:
+    print("downloading ionex ----")
     ionex: Optional[IonexMap] = self._get_latest_valid_data(self.ionex_maps, self.cached_ionex, self.get_ionex_data, time)
     if ionex is None:
       if self.auto_update:

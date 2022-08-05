@@ -34,6 +34,10 @@ def adjweek(t, t0):
       return t - 604800
     return t
 
+def gen_gpstime_from_bds(bds_week, bds_tow):
+    gps_bds_o = GPSTime.from_datetime(datetime(2006, 1, 1,0,0,0,0, timezone.utc))
+    return gps_bds_o + bds_week * 604800 + bds_tow
+
 def tow_to_datetime(tow, week):
     """
     Convert a GPS Week and Time Of Week to Python datetime object.
@@ -95,6 +99,12 @@ class GPSTime:
     self.week = week
     self.tow = tow
     self.seconds_in_week = 604800
+    while self.tow >= self.seconds_in_week:
+      self.tow -= self.seconds_in_week
+      self.week += 1
+    while self.tow < 0:
+      self.tow += self.seconds_in_week
+      self.week -= 1
 
   @classmethod
   def from_datetime(cls, datetime):
@@ -196,3 +206,4 @@ class TimeSyncer:
 
   def __str__(self):
       return f"Reference mono time: {self.ref_mono_time} \n  Reference gps time: {self.ref_gps_time}"
+    
