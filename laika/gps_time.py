@@ -158,6 +158,9 @@ class GPSTime:
   def as_datetime(self):
     return tow_to_datetime(self.tow, self.week)
 
+  def as_unix_timestamp(self):
+    return (gpst_to_utc(self).as_datetime() - datetime.datetime(1970, 1, 1)).total_seconds()
+
   @property
   def day(self):
     return int(self.tow/(24*3600))
