@@ -1,4 +1,5 @@
 import datetime as dt
+from datetime import timezone
 import numpy as np
 import re
 from math import cos, sin, pi, floor
@@ -85,8 +86,8 @@ def compute_grid_lats_lons(data):
 class IonexMap:
   def __init__(self, exp, data1, data2):
     self.exp = exp
-    self.t1 = GPSTime.from_datetime(dt.datetime(*[int(d) for d in data1[0].split()[:6]]))
-    self.t2 = GPSTime.from_datetime(dt.datetime(*[int(d) for d in data2[0].split()[:6]]))
+    self.t1 = GPSTime.from_datetime(dt.datetime(*[int(d) for d in data1[0].split()[:6]]).astimezone(tzinfo=timezone.utc))
+    self.t2 = GPSTime.from_datetime(dt.datetime(*[int(d) for d in data2[0].split()[:6]]).astimezone(tzinfo=timezone.utc))
     assert self.t2 - self.t1 == SECS_IN_HR
     assert len(data1) == len(data2)
 
@@ -181,7 +182,7 @@ def parse_ionex(ionex_file):
   map_dates = []
   for i in range(maps_count):
     date_components = body[map_start_idx[i] + 1].split()[:6]
-    map_dates.append(dt.datetime(*[int(d) for d in date_components]))
+    map_dates.append(dt.datetime(*[int(d) for d in date_components]).astimezone(tzinfo=timezone.utc))
 
   maps = []
   iono_map = iono_map_prev = None

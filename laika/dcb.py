@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from .constants import SECS_IN_HR, SECS_IN_WEEK, \
                       SPEED_OF_LIGHT, GPS_L1, GPS_L2
 from .gps_time import GPSTime
@@ -72,7 +72,7 @@ def parse_dcbs(file_name, SUPPORTED_CONSTELLATIONS):
     if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
       continue
     dcb_type = line_components[3] + '_' + line_components[4]
-    epoch = GPSTime.from_datetime(datetime.strptime(line_components[5], '%Y:%j:%f')) + 12*SECS_IN_HR
+    epoch = GPSTime.from_datetime(datetime.strptime(line_components[5], '%Y:%j:%f')).astimezone(tzinfo=timezone.utc) + 12*SECS_IN_HR
     if prn not in dcbs_dict:
       dcbs_dict[prn] = {}
     dcbs_dict[prn][dcb_type] = float(line_components[8])

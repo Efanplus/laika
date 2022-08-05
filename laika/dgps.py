@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .gps_time import GPSTime
 from .constants import SECS_IN_YEAR
@@ -39,7 +39,7 @@ def download_and_parse_station_postions(cors_station_positions_path, cache_dir):
                         float(contents[line_number+9].split()[3]),
                         float(contents[line_number+10].split()[3])]
           if phase_center and 'ITRF2014 POSITION' in contents[line_number]:
-            epoch = GPSTime.from_datetime(datetime(2005,1,1))
+            epoch = GPSTime.from_datetime(datetime(2005,1,1).astimezone(tzinfo=timezone.utc))
             position = [float(contents[line_number+2].split()[3]),
                         float(contents[line_number+3].split()[3]),
                         float(contents[line_number+4].split()[3])]
@@ -72,7 +72,7 @@ def load_cors_station_positions(cache_dir):
     return np.load(f, allow_pickle=True).item()  # pylint: disable=unexpected-keyword-arg
 
 
-def get_station_position(station_id, cache_dir='/tmp/gnss/', time=GPSTime.from_datetime(datetime.utcnow())):
+def get_station_position(station_id, cache_dir='/tmp/gnss/', time=GPSTime.from_datetime(datetime.utcnow().astimezone(timezone.utc))):
   cors_station_positions_dict = load_cors_station_positions(cache_dir)
   epoch, pos, vel = cors_station_positions_dict[station_id]
   return ((time - epoch)/SECS_IN_YEAR)*np.array(vel) + np.array(pos)

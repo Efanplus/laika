@@ -7,8 +7,10 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import numpy.polynomial.polynomial as poly
-from datetime import datetime
+import datetime
 from math import sin, cos, sqrt, fabs, atan2
+
+from pytz import timezone
 
 from .gps_time import GPSTime, utc_to_gpst
 from .constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, EARTH_ROTATION_RATE, EARTH_GM
@@ -23,7 +25,7 @@ def read4(f, rinex_ver):
   return float(line[4:23]), float(line[23:42]), float(line[42:61]), float(line[61:80])
 
 
-def convert_ublox_ephem(ublox_ephem, current_time: Optional[datetime] = None):
+def convert_ublox_ephem(ublox_ephem, current_time: Optional[datetime.datetime] = None):
   # Week time of ephemeris gps msg has a roll-over period of 10 bits (19.6 years)
   # The latest roll-over was on 2019-04-07
   week = ublox_ephem.gpsWeek
@@ -356,7 +358,8 @@ def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Opt
           hour = int(line[14:16])
           minute = int(line[17:19])
           second = int(float(line[20:31]))
-          epoch = GPSTime.from_datetime(datetime(year, month, day, hour, minute, second))
+          date_time = datetime.datetime(year, month, day, hour, minute, second).astimezone(datetime.timezone.utc)
+          epoch = GPSTime.from_datetime(date_time)
           if file_epoch is None:
             file_epoch = epoch
         # pos line
@@ -451,14 +454,14 @@ def parse_rinex_nav_msg_gps(file_name):
         continue
     if rinex_ver == 3:
       sv_id = int(line[1:3])
-      epoch = GPSTime.from_datetime(datetime.strptime(line[4:23], "%y %m %d %H %M %S"))
+      epoch = GPSTime.from_datetime(datetime.datetime.strptime(line[4:23], "%y %m %d %H %M %S").astimezone(tzinfo=datetime.timezone.utc))
     elif rinex_ver == 2:
       sv_id = int(line[0:2])
       # 2000 year is in RINEX file as 0, but Python requires two digit year: 00
       epoch_str = line[3:20]
       if epoch_str[0] == ' ':
         epoch_str = '0' + epoch_str[1:]
-      epoch = GPSTime.from_datetime(datetime.strptime(epoch_str, "%y %m %d %H %M %S"))
+      epoch = GPSTime.from_datetime(datetime.datetime.strptime(epoch_str, "%y %m %d %H %M %S").astimezone(tzinfo=datetime.timezone.utc))
       line = ' ' + line  # Shift 1 char to the right
 
     line = line.replace('D', 'E')  # Handle bizarro float format
@@ -506,10 +509,10 @@ def parse_rinex_nav_msg_glonass(file_name):
       continue
     if rinex_ver == 3:
       prn = line[:3]
-      epoch = GPSTime.from_datetime(datetime.strptime(line[4:23], "%y %m %d %H %M %S"))
+      epoch = GPSTime.from_datetime(datetime.datetime.strptime(line[4:23], "%y %m %d %H %M %S").astimezone(tzinfo=datetime.timezone.utc))
     elif rinex_ver == 2:
       prn = 'R%02i' % int(line[0:2])
-      epoch = GPSTime.from_datetime(datetime.strptime(line[3:20], "%y %m %d %H %M %S"))
+      epoch = GPSTime.from_datetime(datetime.datetime.strptime(line[3:20], "%y %m %d %H %M %S").astimezone(tzinfo=datetime.timezone.utc))
       line = ' ' + line  # Shift 1 char to the right
 
     line = line.replace('D', 'E')  # Handle bizarro float format

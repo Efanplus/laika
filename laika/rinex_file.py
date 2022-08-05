@@ -10,6 +10,7 @@
 # WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 
 import datetime
+from datetime import timezone
 import numpy as np
 
 
@@ -136,7 +137,7 @@ class RINEXFile:
     second = int(epoch_hdr[15:18])
     microsecond = int(
       epoch_hdr[19:25])  # Discard the least sig. fig. (use microseconds only).
-    epoch = datetime.datetime(year, month, day, hour, minute, second, microsecond)
+    epoch = datetime.datetime(year, month, day, hour, minute, second, microsecond).astimezone(tzinfo=timezone.utc)
 
     flag = int(epoch_hdr[28])
     allowed_flags = {0, 3, 4}

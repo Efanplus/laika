@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone, timedelta
 
 
 def datetime_to_tow(t):
@@ -20,12 +20,19 @@ def datetime_to_tow(t):
       The GPS week number and time-of-week.
     """
     # DateTime to GPS week and TOW
-    wk_ref = datetime.datetime(2014, 2, 16, 0, 0, 0, 0, None)
+    wk_ref = datetime(2014, 2, 16, 0, 0, 0, 0, timezone.utc)
     refwk = 1780
     wk = (t - wk_ref).days // 7 + refwk
-    tow = ((t - wk_ref) - datetime.timedelta((wk - refwk) * 7.0)).total_seconds()
+    tow = ((t - wk_ref) - timedelta((wk - refwk) * 7.0)).total_seconds()
     return wk, tow
-
+  
+def adjweek(t, t0):
+    t_diff = t - t0
+    if t_diff < -302400:
+      return t + 604800
+    if t_diff > 302400:
+      return t - 604800
+    return t
 
 def tow_to_datetime(tow, week):
     """
@@ -46,22 +53,22 @@ def tow_to_datetime(tow, week):
       Python datetime
     """
     #  GPS week and TOW to DateTime
-    t = datetime.datetime(1980, 1, 6, 0, 0, 0, 0, None)
-    t += datetime.timedelta(seconds=tow)
-    t += datetime.timedelta(weeks=week)
+    t = datetime(1980, 1, 6, 0, 0, 0, 0, timezone.utc)
+    t += timedelta(seconds=tow)
+    t += timedelta(weeks=week)
     return t
 
 
 def get_leap_seconds(time):
-  if time <= GPSTime.from_datetime(datetime.datetime(2006, 1, 1)):
+  if time <= GPSTime.from_datetime(datetime(2006, 1, 1, 0, 0, 0, 0, timezone.utc)):
     raise ValueError("Don't know how many leap seconds to use before 2006")
-  elif time <= GPSTime.from_datetime(datetime.datetime(2009, 1, 1)):
+  elif time <= GPSTime.from_datetime(datetime(2009, 1, 1, 0, 0, 0, 0, timezone.utc)):
     return 14
-  elif time <= GPSTime.from_datetime(datetime.datetime(2012, 7, 1)):
+  elif time <= GPSTime.from_datetime(datetime(2012, 7, 1, 0, 0, 0, 0, timezone.utc)):
     return 15
-  elif time <= GPSTime.from_datetime(datetime.datetime(2015, 7, 1)):
+  elif time <= GPSTime.from_datetime(datetime(2015, 7, 1, 0, 0, 0, 0, timezone.utc)):
     return 16
-  elif time <= GPSTime.from_datetime(datetime.datetime(2017, 7, 1)):
+  elif time <= GPSTime.from_datetime(datetime(2017, 7, 1, 0, 0, 0, 0, timezone.utc)):
     return 17
   else:
     return 18
@@ -99,11 +106,11 @@ class GPSTime:
     # https://en.wikipedia.org/wiki/GLONASS
     # Day number (1 to 1461) within a four-year interval
     # starting on 1 January of the last leap year
-    t = datetime.datetime(1992, 1, 1, 0, 0, 0, 0, None)
-    t += datetime.timedelta(days=cycle*(365*4+1)+(days-1))
+    t = datetime(1992, 1, 1, 0, 0, 0, 0, timezone.utc)
+    t += timedelta(days=cycle*(365*4+1)+(days-1))
     # according to Moscow decree time.
-    t -= datetime.timedelta(hours=3)
-    t += datetime.timedelta(seconds=tow)
+    t -= timedelta(hours=3)
+    t += timedelta(seconds=tow)
     ret = cls.from_datetime(t)
     return utc_to_gpst(ret)
 

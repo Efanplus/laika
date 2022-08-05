@@ -10,7 +10,7 @@ import time
 import tempfile
 import socket
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 from io import BytesIO
 
@@ -305,7 +305,7 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
     if constellation not in CONSTELLATION_NASA_CHAR:
       return None
     c = CONSTELLATION_NASA_CHAR[constellation]
-    if GPSTime.from_datetime(datetime.utcnow()) - time > SECS_IN_DAY:
+    if GPSTime.from_datetime(datetime.utcnow().astimezone(timezone.utc)) - time > SECS_IN_DAY:
       url_bases = (
         'https://github.com/commaai/gnss-data/raw/master/gnss/data/daily/',
         'https://cddis.nasa.gov/archive/gnss/data/daily/',
@@ -334,7 +334,7 @@ def download_orbits_gps(time, cache_dir, ephem_types):
   filenames = []
   time_str = "%i%i" % (time.week, time.day)
   # Download filenames in order of quality. Final -> Rapid -> Ultra-Rapid(newest first)
-  if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
+  if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow().astimezone(timezone.utc)) - time > 3 * SECS_IN_WEEK:
     filenames.append(f"igs{time_str}.sp3")
   if EphemerisType.RAPID_ORBIT in ephem_types:
     filenames.append(f"igr{time_str}.sp3")
@@ -351,7 +351,7 @@ def download_prediction_orbits_russia_src(gps_time, cache_dir):
   # Download single file that contains Ultra_Rapid predictions for GPS, GLONASS and other constellations
   t = gps_time.as_datetime()
   # Files exist starting at 29-01-2022
-  if t < datetime(2022, 1, 29):
+  if t < datetime(2022, 1, 29).astimezone(tzinfo=timezone.utc):
     return None
   url_bases = 'https://github.com/commaai/gnss-data-alt/raw/master/MCC/PRODUCTS/'
   folder_path = t.strftime('%y%j/ultra/')
@@ -362,7 +362,7 @@ def download_prediction_orbits_russia_src(gps_time, cache_dir):
   file_prefix_prev = "Stark_1D_" + prev_day.strftime('%y%m%d')
   folder_path_prev = prev_day.strftime('%y%j/ultra/')
 
-  current_day = GPSTime.from_datetime(datetime(t.year, t.month, t.day))
+  current_day = GPSTime.from_datetime(datetime(t.year, t.month, t.day).astimezone(tzinfo=timezone.utc))
   # Ultra-Orbit is published in gnss-data-alt every 10th minute past the 5,11,17,23 hour.
   # Predictions published are delayed by around 10 hours.
   # Download latest file that includes gps_time with 20 minutes margin.:
@@ -390,7 +390,7 @@ def download_orbits_russia_src(time, cache_dir, ephem_types):
   )
   t = time.as_datetime()
   folder_paths = []
-  current_gps_time = GPSTime.from_datetime(datetime.utcnow())
+  current_gps_time = GPSTime.from_datetime(datetime.utcnow().astimezone(timezone.utc))
   filename = "Sta%i%i.sp3" % (time.week, time.day)
   if EphemerisType.FINAL_ORBIT in ephem_types and current_gps_time - time > 2 * SECS_IN_WEEK:
     folder_paths.append(t.strftime('%y%j/final/'))
@@ -458,5 +458,5 @@ def download_cors_station(time, station_name, cache_dir):
     filepath = download_and_cache_file(url_bases, folder_path, cache_dir+'cors_obs/', filename, compression='.gz')
     return filepath
   except DownloadFailed:
-    print("File not downloaded, check availability on server.")
+    print("download_cors_station, File not downloaded, check availability on server.")
     return None
